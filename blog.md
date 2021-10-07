@@ -42,9 +42,9 @@ app.listen(PORT, () => {
 Now setup our database connection, before that lets setup a file to store
 confidential credentials like the database URI. For that we will have to install a package
 `npm install dotenv`
-To use dotenv, add following code in app.ts
 
-```js
-import dotenv from "dotenv";
-dotenv.config();
-```
+Now create a .env file in the root of the project and add your database uri, like this
+`dbURL = mongodb://localhost:27017/PROJECT_NAME`
+
+No we need to create a layer between our app and the .env file to check if the env variables are available and valid.
+create a secrets.ts file in `utils` folder inside the src folder (ie where your app.ts exist)
