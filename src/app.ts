@@ -7,7 +7,6 @@ const app = express();
 
 app.set("view engine", "ejs");
 
-// connect to mongodb
 mongoose.connect(MONGO_URI, () => {
   console.log("connected to mongodb");
 });

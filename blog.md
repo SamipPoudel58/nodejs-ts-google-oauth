@@ -130,7 +130,7 @@ router.get("/login", (req, res) => {
 export default router;
 ```
 
-Now in app.ts, import the authRoutes, your app.ts should look sth like this
+Now in app.ts, import and use the authRoutes, your app.ts should look sth like this
 
 ```js
 import express from "express";
@@ -142,7 +142,6 @@ const app = express();
 
 app.set("view engine", "ejs");
 
-// connect to mongodb
 mongoose.connect(MONGO_URI, () => {
   console.log("connected to mongodb");
 });
@@ -158,3 +157,75 @@ app.listen(PORT, () => {
   console.log("App listening on port: " + PORT);
 });
 ```
+
+Now create a file `login.ejs` inside views folder
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+  </head>
+
+  <body>
+    <a href="/">Homepage</a>
+    <h3>Login to Continue</h3>
+    <a href="/auth/google">Login with Google</a>
+  </body>
+</html>
+```
+
+Now lets setup passport.js for handling oauth. Passport.js provides many startegies that allows us to authenticate users through different mediums like google,facebook,github etc. Here, we will be using google Oauth 2.0
+
+But before all that, we need to setup our project in the google developer console https://console.cloud.google.com/apis/dashboard
+
+you will see a dashboard, create a new project
+
+At the top you will see a button named `Enable APIs & Services`, click it and scroll down and choose Google+ API and click "enable"
+Once its enabled, navigate back to your project dashboard (navigation bar in your top left corner, APIs & Service > Dashboard)
+
+Lets setup the consent screen first.
+click on the `OAuth consent screen` tab
+
+You will be asked to choose the user type, choose `External` and hit `Create`
+
+Under App Information add your app name, user support email and app logo(which is optional, you can totally skip it)
+
+Under App domain, add application homepage ( it can be http://localhost:3000 for now, later you can change it if you deploy it anywhere)
+Leave everything else and
+Now move on to Developer contact informaton, add your email address then save and continue
+
+You will be redirected to scopes page, click on `Add or Remove Scopes`
+and check the first two(ie. userinfo.email & userinfo.profile)
+
+We are done here, now save and continue. check all the details in the summary, if they are as you've entered them, then click on `back to dashboard`
+
+Go to credentials tab, and at the top click on create credentials and choose the `OAuth Client ID` option
+
+Choose the application type to be `Web Application`
+Give it a name
+In authorized javascript origin, use the current url of YOUR application ( in my case its http://localhost:3000)
+
+In authorized redirect URI, put http://localhost:3000/auth/google/redirect
+make sure the route is precisely "/auth/google/redirect" because we will setup our routes accordingly
+and now hit create
+
+you will be provided with `client ID` and `client Secret` copy those into your .env as
+
+```
+GOOGLE_CLIENT_ID = your_google_client_id
+GOOGLE_CLIENT_SECRET = your_google_client_secret
+```
+
+now in your secret.ts lets export these credentials as
+
+```js
+export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string;
+export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET as string;
+```
+
+Now that we have our credentials, we can start setting up passportjs strategy in our app.
+Create a `config` folder inside src and create a file `passport.ts` inside it.
