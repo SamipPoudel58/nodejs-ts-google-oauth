@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import { MONGO_URI } from "./utils/secrets";
 import authRoutes from "./routes/authRoutes";
+import "./config/passport";
 
 const app = express();
 

@@ -28,7 +28,7 @@
 
 Create an express server
 
-```js
+```ts
 import express from "express";
 
 const app = express();
@@ -49,7 +49,7 @@ Now create a .env file in the root of the project and add your database uri, lik
 Now we need to create a layer between our app and the .env file to check if the env variables are available and valid.
 create a secrets.ts file in `utils` folder inside the src folder (ie where your app.ts exist)
 
-```js
+```ts
 import dotenv from "dotenv";
 import fs from "fs";
 
@@ -85,7 +85,7 @@ Lets now setup up `ejs` which will help us render html to the client
 
 In your app.ts
 
-```js
+```ts
 app.set("view engine", "ejs");
 ```
 
@@ -110,7 +110,7 @@ so create a folder views and create a home.ejs file in it. We can write a simple
 
 now lets setup the home route, to see if our view engine works
 
-```js
+```ts
 app.get("/", (req, res) => {
   res.render("home");
 });
@@ -119,7 +119,7 @@ app.get("/", (req, res) => {
 Next up, to setup our authentication routes lets create a folder `routes` inside src folder
 add a file `authRoutes.ts`
 
-```js
+```ts
 import express from "express";
 const router = express.Router();
 
@@ -132,7 +132,7 @@ export default router;
 
 Now in app.ts, import and use the authRoutes, your app.ts should look sth like this
 
-```js
+```ts
 import express from "express";
 import mongoose from "mongoose";
 import { MONGO_URI } from "./utils/secrets";
@@ -200,6 +200,7 @@ Now move on to Developer contact informaton, add your email address then save an
 
 You will be redirected to scopes page, click on `Add or Remove Scopes`
 and check the first two(ie. userinfo.email & userinfo.profile)
+scope means what data do we want to access fromt he user's google account. Here we want just the email and profile, if you need more or less data check the boxes accordingly.
 
 We are done here, now save and continue. check all the details in the summary, if they are as you've entered them, then click on `back to dashboard`
 
@@ -222,10 +223,58 @@ GOOGLE_CLIENT_SECRET = your_google_client_secret
 
 now in your secret.ts lets export these credentials as
 
-```js
+```ts
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET as string;
 ```
 
 Now that we have our credentials, we can start setting up passportjs strategy in our app.
 Create a `config` folder inside src and create a file `passport.ts` inside it.
+
+// TODO: incomplete
+
+```ts
+// TODO: incomplete
+import passport from "passport";
+import passportGoogle from "passport-google-oauth20";
+import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from "../utils/secrets";
+const GoogleStrategy = passportGoogle.Strategy;
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      callbackURL: "/auth/google/redirect",
+    },
+    () => {}
+  )
+);
+```
+
+Next, import the `passport.ts` in your `app.ts`;
+
+```ts
+import "./config/passport";
+```
+
+In `login.ejs`, you can see we had an anchor tag that links to the route `auth/google`, we will use this route to redirect user to the
+google consent screen.
+// TODO: add a consent screen screenshot
+
+so now lets set up that route in `authRoutes.ts`
+make sure you import passportjs in this file
+
+```ts
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["email", "profile"],
+  })
+);
+```
+
+Now if you go to `http://localhost:3000/auth/login` and click on login with google, you will hit the route `auth/google` which will take you to the consent screen and if you try to login you will get an error
+`Cannot GET /auth/google/redirect`
+
+This is because we have not setup the callback route yet.
