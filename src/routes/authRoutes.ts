@@ -13,4 +13,8 @@ router.get(
   })
 );
 
+router.get("/google/redirect", passport.authenticate("google"), (req, res) => {
+  res.send("This is the callback route");
+});
+
 export default router;

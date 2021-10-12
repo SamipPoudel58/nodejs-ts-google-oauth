@@ -278,3 +278,37 @@ Now if you go to `http://localhost:3000/auth/login` and click on login with goog
 `Cannot GET /auth/google/redirect`
 
 This is because we have not setup the callback route yet.
+
+```ts
+router.get("/google/redirect", passport.authenticate("google"), (req, res) => {
+  res.send("This is the callback route");
+});
+```
+
+This will get rid of the error but you might have noticed the consent screen is stuck, this is because the callback function in our passport.ts file in empty.
+
+Inside this callback function we receive data from google about the user, so this is where we can store the user data in our database.
+
+Lets build the user schema, create a folder "models" inside the src folder. Inside models folder create a file "User.ts" where we can define the schema as:
+
+```ts
+import mongoose, { Document } from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export type UserDocument = Document & {
+  username: string;
+  email: string;
+  googleId: string;
+};
+
+const userSchema = new Schema<UserDocument>({
+  username: String,
+  email: String,
+  googleId: String,
+});
+
+const User = mongoose.model<UserDocument>("User", userSchema);
+
+export default User;
+```
