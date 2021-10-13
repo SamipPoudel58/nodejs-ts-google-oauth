@@ -1,8 +1,17 @@
 import passport from "passport";
 import passportGoogle from "passport-google-oauth20";
-import User from "../models/user";
+import User from "../models/User";
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from "../utils/secrets";
 const GoogleStrategy = passportGoogle.Strategy;
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  const user = await User.findById(id);
+  done(null, user);
+});
 
 passport.use(
   new GoogleStrategy(
@@ -14,6 +23,7 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       const user = await User.findOne({ googleId: profile.id });
 
+      // If user doesn't exist creates a new user. (similar to sign up)
       if (!user) {
         const newUser = await User.create({
           googleId: profile.id,

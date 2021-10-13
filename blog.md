@@ -247,7 +247,10 @@ passport.use(
       clientSecret: GOOGLE_CLIENT_SECRET,
       callbackURL: "/auth/google/redirect",
     },
-    () => {}
+    (accessToken, refreshToken, profile, done) => {
+      // get profile details
+      // save profile details in db
+    }
   )
 );
 ```
@@ -285,7 +288,7 @@ router.get("/google/redirect", passport.authenticate("google"), (req, res) => {
 });
 ```
 
-This will get rid of the error but you might have noticed the consent screen is stuck, this is because the callback function in our passport.ts file in empty.
+This will get rid of the error but you might have noticed the consent screen is stuck, this is because the callback function in our passport.ts file is empty.
 
 Inside this callback function we receive data from google about the user, so this is where we can store the user data in our database.
 
@@ -312,3 +315,46 @@ const User = mongoose.model<UserDocument>("User", userSchema);
 
 export default User;
 ```
+
+Now lets complete our callback function in passport.ts
+// TODO: elaborate more
+
+```ts
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      callbackURL: "/auth/google/redirect",
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      const user = await User.findOne({ googleId: profile.id });
+
+      // If user doesn't exist creates a new user. (similar to sign up)
+      if (!user) {
+        const newUser = await User.create({
+          googleId: profile.id,
+          name: profile.displayName,
+          email: profile.emails && profile.emails[0].value,
+        });
+        if (newUser) {
+          done(null, newUser);
+        }
+      } else {
+        done(null, user);
+      }
+    }
+  )
+);
+```
+
+Passport has a `serializeUser` method which receives data from the passport callback function i.e from `done(null,user)` and stores it in the session. Here we are storing only user.id which will help us
+identify the user.
+
+```ts
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+```
+
+// Explain deserialize
