@@ -104,6 +104,7 @@ so create a folder views and create a home.ejs file in it. We can write a simple
 
   <body>
     <h1>This is home</h1>
+    <a href="/auth/login">Go to login page</a>
   </body>
 </html>
 ```
@@ -348,7 +349,7 @@ passport.use(
 );
 ```
 
-Passport has a `serializeUser` method which receives data from the passport callback function i.e from `done(null,user)` and stores it in the session. Here we are storing only user.id which will help us
+Passport has a `serializeUser` method which receives user data from the passport callback function i.e from `done(null,user)` and stores it in a cookie, (when done function is called). Here we are storing only user.id which will help us
 identify the user.
 
 ```ts
@@ -358,6 +359,7 @@ passport.serializeUser((user, done) => {
 ```
 
 // Explain deserialize
+Passport has a `deserializeUser` method that reads the cookie and gets the stored user id, here we use that Id to find the user in our database and after we call done function it attached that user data into our request, which can be accessed through `req.user`
 
 ```ts
 passport.deserializeUser(async (id, done) => {
@@ -366,8 +368,9 @@ passport.deserializeUser(async (id, done) => {
 });
 ```
 
-Install cookie-session, use it in the app and initialize passport,
-Before we use cookie-session lets setup secret key in our .env file
+To store session data in a cookie, we will use a package "cookie-session"
+Install cookie-session, use it in the app and also initialize passport,
+Before we use cookie-session lets setup secret key in our .env file which will be used to encrypt our cookies
 
 ```
 COOKIE_KEY = any_long_and_random_string
@@ -379,12 +382,14 @@ Then export it in secrets.ts
 export const COOKIE_KEY = process.env.COOKIE_KEY as string;
 ```
 
-Now your app.ts should look sth like this
+Now lets setup cookie-session and intilialize passport,
+here's how you can set those up
 
 ```ts
 import cookieSession from "cookie-session";
 import passport from "passport";
-
+import { COOKIE_KEY } from "./utils/secrets";
+// setting up cookieSession
 app.use(
   cookieSession({
     maxAge: 24 * 60 * 60 * 1000,
@@ -392,6 +397,7 @@ app.use(
   })
 );
 
+// initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
 ```
@@ -434,5 +440,85 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("App listening on port: " + PORT);
+});
+```
+
+Now, if try to login, you will successfully get a message "This is the callback route" that means your login is complete
+
+Instead of just giving that message lets redirect the user to something meaningful, like a profile page.
+So, in `authRoutes.ts`, navigate to `/google/redirect` route and change the contoller function as:
+
+```ts
+router.get("/google/redirect", passport.authenticate("google"), (req, res) => {
+  res.redirect("/profile");
+});
+```
+
+now as the user signs in, they will be redirected to `/profile` route, but we have not created it yet.
+Create a `profileRoutes.ts` file in your `src/routes` folder
+
+```ts
+import express from "express";
+const router = express.Router();
+
+router.get("/", (req, res) => {
+  res.render("profile", { user: req.user });
+});
+
+export default router;
+```
+
+Here we are rendering a profile page (i.e profile.ejs which we have not created yet) and passing in an object that contains user's data, which we can use in our markup in profile.ejs
+
+So create a `profile.ejs` file in `views` folder
+Ejs helps us embed javascript in our markup, so we can use the user data that we passed and render it to the browser.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Page</title>
+  </head>
+
+  <body>
+    <h1>Profile Page</h1>
+    <% if (user) { %>
+    <h3>Username : <%= user.username %></h3>
+    <h3>Email : <%= user.email %></h3>
+    <% } %>
+  </body>
+</html>
+```
+
+Now, to use this route in our app, we need to import it in our app.ts and use it as
+
+```ts
+import profileRoutes from "./routes/profileRoutes";
+
+app.use("/profile", profileRoutes);
+```
+
+The next problem we need to tackle is that, anyone can access the `/profile` route. We don't want that, we only want those user who are logged in to access that page.
+
+So to handle this lets create a middleware function, in you `profileRoutes.ts` create a function checkAuth
+
+```ts
+const checkAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    res.redirect("/auth/login");
+  } else {
+    next();
+  }
+};
+```
+
+Now lets add this middleware function in our `/profile` route handler that we creted previously
+
+```ts
+router.get("/", checkAuth, (req, res) => {
+  res.render("profile", { user: req.user });
 });
 ```

@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import { COOKIE_KEY, MONGO_URI } from "./utils/secrets";
 import authRoutes from "./routes/authRoutes";
+import profileRoutes from "./routes/profileRoutes";
 import "./config/passport";
 import cookieSession from "cookie-session";
 import passport from "passport";
@@ -25,6 +26,7 @@ mongoose.connect(MONGO_URI, () => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/profile", profileRoutes);
 
 app.get("/", (req, res) => {
   res.render("home");
