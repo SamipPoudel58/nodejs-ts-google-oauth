@@ -336,7 +336,8 @@ passport.use(
         const newUser = await User.create({
           googleId: profile.id,
           name: profile.displayName,
-          email: profile.emails && profile.emails[0].value,
+          email: profile.emails?.[0].value,
+          // we are using optional chaining because profile.emails may be undefined.
         });
         if (newUser) {
           done(null, newUser);
@@ -348,6 +349,8 @@ passport.use(
   )
 );
 ```
+
+Read more about [optional chaining](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining)
 
 Passport has a `serializeUser` method which receives user data from the passport callback function i.e from `done(null,user)` and stores it in a cookie, (when done function is called). Here we are storing only user.id which will help us
 identify the user.
@@ -367,6 +370,57 @@ passport.deserializeUser(async (id, done) => {
   done(null, user);
 });
 ```
+
+// TODO: Explain typings/express/index.d.ts
+In the serialize method, You might have encountered an typescript error `Property 'id' does not exist on type 'User'`
+To understand this error, lets look at the type definiton file of passport.js.
+In VS Code you can press Ctrl and click on the package name from any of the import statements, or simply navigate to node_modules > @types > passport > index.d.ts
+
+You will see something like this
+
+```ts
+declare global {
+  namespace Express {
+    // tslint:disable-next-line:no-empty-interface
+    interface AuthInfo {}
+    // tslint:disable-next-line:no-empty-interface
+    interface User {}
+
+    interface Request {
+      authInfo?: AuthInfo | undefined;
+      user?: User | undefined;
+    }
+  }
+}
+```
+
+As you can see, this type definition file overrides the interface of Request and adds a property user whose type is an empty interface, so thats the reason, for the error because there is no property id in User
+
+So to solve this, create a `typings` folder inside src folder. Inside typigns folder create a `express` folder and inside it create a file `index.d.ts`. This is where we will override the type of User.
+Your index.d.ts should look something like this
+
+```ts
+import { UserDocument } from "../../models/User";
+
+declare global {
+  namespace Express {
+    interface User extends UserDocument {}
+  }
+}
+```
+
+Here we are setting the User interface to extend UserDocument interface which we created in the `UserModel.ts`
+
+Now go to your `tsconfig.json` file and add typeRoots value as
+
+```json
+"typeRoots": [
+      "./src/typings",
+      "./node_modules/@types"
+    ]
+```
+
+Now the error should be fixed, so lets move on.
 
 To store session data in a cookie, we will use a package "cookie-session"
 Install cookie-session, use it in the app and also initialize passport,
@@ -488,6 +542,8 @@ Ejs helps us embed javascript in our markup, so we can use the user data that we
     <% if (user) { %>
     <h3>Username : <%= user.username %></h3>
     <h3>Email : <%= user.email %></h3>
+    <a href="/">Homepage</a>
+    <a href="/auth/logout">Logout</a>
     <% } %>
   </body>
 </html>
@@ -521,4 +577,54 @@ Now lets add this middleware function in our `/profile` route handler that we cr
 router.get("/", checkAuth, (req, res) => {
   res.render("profile", { user: req.user });
 });
+```
+
+Now that we have a login system in place, lets add a way for users to log out.In `authRoutes.ts` add a login route as
+
+```ts
+router.get("/logout", (req, res) => {
+  req.logout();
+  res.redirect("/");
+});
+```
+
+Our app now has a good authentication system, lets add some little things to make it even better.
+
+Currently, our `/auth/login` route can be accessed even by logged in users, which doesn't need to happen, so lets redirect users to profile page if they try to access the login page
+
+In `authRoutes.ts`, change the `/login` handler as
+
+```ts
+router.get("/login", (req, res) => {
+  if (req.user) {
+    res.redirect("/profile");
+  }
+  res.render("login");
+});
+```
+
+Here we are doing a simple if check to see if req.user exists and redirect them to `/profile` route.
+
+Now, in our homepage too, there is a link to go to login page even for the logged in user which is unnecessary, so lets add a link to profile page if the user is logged in.
+
+To do that we have to pass user data to our view, in `app.ts` change the `/` route handler as
+
+```ts
+app.get("/", (req, res) => {
+  res.render("home", { user: req.user });
+});
+```
+
+Now in `home.ejs` file, add an if check to render different anchor tags as per the auth state.
+Here's what the body should look like:
+
+```ts
+<body>
+    <h1>This is home</h1>
+    <% if (user) { %>
+        <a href="/profile">Go to Profile Page</a>
+    <% } else { %>
+          <a href="/auth/login">Go to login page</a>
+      <% } %>
+</body>
 ```

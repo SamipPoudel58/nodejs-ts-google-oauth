@@ -29,7 +29,7 @@ app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
 
 app.get("/", (req, res) => {
-  res.render("home");
+  res.render("home", { user: req.user });
 });
 
 const PORT = process.env.PORT || 3000;

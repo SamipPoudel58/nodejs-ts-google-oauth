@@ -3,7 +3,15 @@ import passport from "passport";
 const router = express.Router();
 
 router.get("/login", (req, res) => {
+  if (req.user) {
+    res.redirect("/profile");
+  }
   res.render("login");
+});
+
+router.get("/logout", (req, res) => {
+  req.logout();
+  res.redirect("/");
 });
 
 router.get(
