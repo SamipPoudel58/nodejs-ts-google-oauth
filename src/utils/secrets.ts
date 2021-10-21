@@ -10,6 +10,8 @@ if (fs.existsSync(".env")) {
 export const ENVIRONMENT = process.env.NODE_ENV;
 const prod = ENVIRONMENT === "production";
 
+export const PORT = (process.env.PORT || 3000) as number;
+
 export const MONGO_URI = prod
   ? (process.env.MONGO_PROD as string)
   : (process.env.MONGO_LOCAL as string);

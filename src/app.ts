@@ -1,6 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
-import { COOKIE_KEY, MONGO_URI } from "./utils/secrets";
+import { COOKIE_KEY, MONGO_URI, PORT } from "./utils/secrets";
 import authRoutes from "./routes/authRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import "./config/passport";
@@ -32,7 +32,6 @@ app.get("/", (req, res) => {
   res.render("home", { user: req.user });
 });
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("App listening on port: " + PORT);
 });
