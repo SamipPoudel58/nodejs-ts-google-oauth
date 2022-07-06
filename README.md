@@ -1,6 +1,6 @@
-[![blog over image](https://samippoudel.hashnode.dev/_next/image?url=https%3A%2F%2Fcdn.hashnode.com%2Fres%2Fhashnode%2Fimage%2Fupload%2Fv1635344209535%2FlzyUTZ3HF.png%3Fw%3D1600%26h%3D840%26fit%3Dcrop%26crop%3Dentropy%26auto%3Dcompress%2Cformat%26format%3Dwebp&w=1920&q=75)](https://samippoudel.hashnode.dev/google-oauth-using-typescript-expressjs-passportjs-and-mongodb-ckvatnioy0hsu45s1db0r3qoy)
+[![blog cover image](https://www.samippoudel.com.np/images/google_oauth.png)](https://www.samippoudel.com.np/blog/google_oauth)
 
-<h2 align="center">Demo Project for <a href="https://samippoudel.hashnode.dev/google-oauth-using-typescript-expressjs-passportjs-and-mongodb-ckvatnioy0hsu45s1db0r3qoy">a blog</a></h2>
+<h2 align="center">Demo Project for <a href="https://www.samippoudel.com.np/blog/google_oauth">a blog</a></h2>
 
 ## 🚀 Local Development
 
